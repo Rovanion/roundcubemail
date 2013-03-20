@@ -837,13 +837,8 @@ a.iconlink.upload {
 
 .uibox {
 	border: 1px solid #a3a3a3;
-	border-radius: 4px;
+	border-radius: 3px;
 	overflow: hidden;
-	box-shadow: 0 0 2px #999;
-	-o-box-shadow: 0 0 2px #999;
-	-webkit-box-shadow: 0 0 2px #999;
-	-moz-box-shadow: 0 0 2px #999;
-	background: #fff;
 }
 
 .minwidth {
