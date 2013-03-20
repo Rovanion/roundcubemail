@@ -707,7 +707,10 @@ function rcmail_print_body($part, $p = array())
         + $p + array('safe' => false, 'plain' => false, 'inline_html' => true));
 
   // convert html to text/plain
-  if ($data['type'] == 'html' && $data['plain']) {
+  if ($data['plain'] && ($data['type'] == 'html' || $data['type'] == 'enriched')) {
+    if ($data['type'] == 'enriched') {
+      $data['body'] = rcube_enriched::to_html($data['body']);
+    }
     $txt = new rcube_html2text($data['body'], false, true);
     $body = $txt->get_text();
     $part->ctype_secondary = 'plain';
@@ -757,7 +760,8 @@ function rcmail_plain_body($body, $flowed=false)
   global $RCMAIL;
 
   // make links and email-addresses clickable
-  $replacer = new rcmail_string_replacer;
+  $attribs  = array('link_attribs' => array('rel' => 'noreferrer', 'target' => '_blank'));
+  $replacer = new rcmail_string_replacer($attribs);
 
   // search for patterns like links and e-mail addresses and replace with tokens
   $body = $replacer->replace($body);
@@ -1083,9 +1087,9 @@ function rcmail_message_body($attrib)
         $out .= html::div('message-partheaders', rcmail_message_headers(sizeof($header_attrib) ? $header_attrib : null, $part->headers));
       }
       else if ($part->type == 'content') {
-        // unsapported
+        // unsupported (e.g. encrypted)
         if ($part->realtype) {
-          if ($part->realtype == 'multipart/encrypted') {
+          if ($part->realtype == 'multipart/encrypted' || $part->realtype == 'application/pkcs7-mime') {
             $out .= html::span('part-notice', rcube_label('encryptedmessage'));
           }
           continue;
@@ -1182,10 +1186,9 @@ function rcmail_message_body($attrib)
           $show_link = array(
             'href' => $MESSAGE->get_part_url($attach_prop->mime_id, false),
             'onclick' => sprintf(
-              'return %s.command(\'load-attachment\',{part:\'%s\', mimetype:\'%s\'},this)',
+              'return %s.command(\'load-attachment\',\'%s\',this)',
               JS_OBJECT_NAME,
-              $attach_prop->mime_id,
-              $mimetype)
+              $attach_prop->mime_id)
           );
           $out .= html::p('image-attachment',
              html::a($show_link + array('class' => 'image-link', 'style' => sprintf('width:%dpx', $thumbnail_size)),
@@ -1371,7 +1374,7 @@ function rcmail_html4inline($body, $container_id, $body_id='', &$attributes=null
 
 
 /**
- * parse link attributes and set correct target
+ * parse link (a, link, area) attributes and set correct target
  */
 function rcmail_alter_html_link($matches)
 {
@@ -1380,9 +1383,9 @@ function rcmail_alter_html_link($matches)
   // Support unicode/punycode in top-level domain part
   $EMAIL_PATTERN = '([a-z0-9][a-z0-9\-\.\+\_]*@[^&@"\'.][^@&"\']*\\.([^\\x00-\\x40\\x5b-\\x60\\x7b-\\x7f]{2,}|xn--[a-z0-9]{2,}))';
 
-  $tag = $matches[1];
+  $tag    = strtolower($matches[1]);
   $attrib = parse_attrib_string($matches[2]);
-  $end = '>';
+  $end    = '>';
 
   // Remove non-printable characters in URL (#1487805)
   if ($attrib['href'])
@@ -1407,6 +1410,11 @@ function rcmail_alter_html_link($matches)
   }
   else if (!empty($attrib['href']) && $attrib['href'][0] != '#') {
     $attrib['target'] = '_blank';
+  }
+
+  // Better security by adding rel="noreferrer" (#1484686)
+  if (($tag == 'a' || $tag == 'area') && $attrib['href'] && $attrib['href'][0] != '#') {
+    $attrib['rel'] = 'noreferrer';
   }
 
   // allowed attributes for a|link|area tags
@@ -1443,6 +1451,11 @@ function rcmail_address_string($input, $max=null, $linked=false, $addicon=null, 
     $name   = $part['name'];
     $mailto = $part['mailto'];
     $string = $part['string'];
+
+    // phishing email prevention (#1488981), e.g. "valid@email.addr <phishing@email.addr>"
+    if ($name && $name != $mailto && strpos($name, '@')) {
+      $name = '';
+    }
 
     // IDNA ASCII to Unicode
     if ($name == $mailto)

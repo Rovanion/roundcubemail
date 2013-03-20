@@ -439,6 +439,29 @@ class rcube_db
     }
 
     /**
+     * Get number of rows for a SQL query
+     * If no query handle is specified, the last query will be taken as reference
+     *
+     * @param mixed $result Optional query handle
+     * @return mixed   Number of rows or false on failure
+     */
+    public function num_rows($result = null)
+    {
+        if ($result || ($result === null && ($result = $this->last_result))) {
+            // repeat query with SELECT COUNT(*) ...
+            if (preg_match('/^SELECT\s+(?:ALL\s+|DISTINCT\s+)?(?:.*?)\s+FROM\s+(.*)$/i', $result->queryString, $m)) {
+                $query = $this->dbh->query('SELECT COUNT(*) FROM ' . $m[1], PDO::FETCH_NUM);
+                return $query ? intval($query->fetchColumn(0)) : false;
+            }
+            else {
+                return count($result->fetchAll());
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Get last inserted record ID
      *
      * @param string $table Table name (to find the incremented sequence)
@@ -571,7 +594,7 @@ class rcube_db
      * Formats input so it can be safely used in a query
      *
      * @param mixed  $input Value to quote
-     * @param string $type  Type of data
+     * @param string $type  Type of data (integer, bool, ident)
      *
      * @return string Quoted/converted string for use in query
      */
@@ -584,6 +607,10 @@ class rcube_db
 
         if (is_null($input)) {
             return 'NULL';
+        }
+
+        if ($type == 'ident') {
+            return $this->quote_identifier($input);
         }
 
         // create DB handle if not available
@@ -635,7 +662,7 @@ class rcube_db
             $name[] = $start . $elem . $end;
         }
 
-        return  implode($name, '.');
+        return implode($name, '.');
     }
 
     /**
@@ -652,7 +679,7 @@ class rcube_db
      * Return list of elements for use with SQL's IN clause
      *
      * @param array  $arr  Input array
-     * @param string $type Type of data
+     * @param string $type Type of data (integer, bool, ident)
      *
      * @return string Comma-separated list of quoted values for use in query
      */

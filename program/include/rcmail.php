@@ -123,7 +123,7 @@ class rcmail extends rcube
    */
   public function set_task($task)
   {
-    $task = asciiwords($task);
+    $task = asciiwords($task, true);
 
     if ($this->user && $this->user->ID)
       $task = !$task ? 'mail' : $task;
@@ -1798,32 +1798,51 @@ class rcmail extends rcube
      *
      * @param string $fallback       Fallback message label
      * @param array  $fallback_args  Fallback message label arguments
+     * @param string $suffix         Message label suffix
      */
-    public function display_server_error($fallback = null, $fallback_args = null)
+    public function display_server_error($fallback = null, $fallback_args = null, $suffix = '')
     {
         $err_code = $this->storage->get_error_code();
         $res_code = $this->storage->get_response_code();
+        $args     = array();
 
         if ($res_code == rcube_storage::NOPERM) {
-            $this->output->show_message('errornoperm', 'error');
+            $error = 'errornoperm';
         }
         else if ($res_code == rcube_storage::READONLY) {
-            $this->output->show_message('errorreadonly', 'error');
+            $error = 'errorreadonly';
+        }
+        else if ($res_code == rcube_storage::OVERQUOTA) {
+            $error = 'errorroverquota';
         }
         else if ($err_code && ($err_str = $this->storage->get_error_str())) {
             // try to detect access rights problem and display appropriate message
             if (stripos($err_str, 'Permission denied') !== false) {
-                $this->output->show_message('errornoperm', 'error');
+                $error = 'errornoperm';
+            }
+            // try to detect full mailbox problem and display appropriate message
+            // there can be e.g. "Quota exceeded" or "quotum would exceed"
+            else if (stripos($err_str, 'quot') !== false && stripos($err_str, 'exceed') !== false) {
+                $error = 'erroroverquota';
             }
             else {
-                $this->output->show_message('servererrormsg', 'error', array('msg' => $err_str));
+                $error = 'servererrormsg';
+                $args  = array('msg' => $err_str);
             }
         }
         else if ($err_code < 0) {
-            $this->output->show_message('storageerror', 'error');
+            $error = 'storageerror';
         }
         else if ($fallback) {
-            $this->output->show_message($fallback, 'error', $fallback_args);
+            $error = $fallback;
+            $args  = $fallback_args;
+        }
+
+        if ($error) {
+            if ($suffix && $this->text_exists($error . $suffix)) {
+                $error .= $suffix;
+            }
+            $this->output->show_message($error, 'error', $args);
         }
     }
 

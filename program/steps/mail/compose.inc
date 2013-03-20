@@ -183,9 +183,18 @@ $LINE_LENGTH = $RCMAIL->config->get('line_length', 72);
 
 if (!empty($msg_uid) && empty($COMPOSE['as_attachment']))
 {
-  // similar as in program/steps/mail/show.inc
-  // re-set 'prefer_html' to have possibility to use html part for compose
-  $CONFIG['prefer_html'] = $CONFIG['prefer_html'] || $CONFIG['htmleditor'] || $compose_mode == RCUBE_COMPOSE_DRAFT || $compose_mode == RCUBE_COMPOSE_EDIT;
+  $mbox_name = $RCMAIL->storage->get_folder();
+
+  // set format before rcube_message construction
+  // use the same format as for the message view
+  if (isset($_SESSION['msg_formats'][$mbox_name.':'.$msg_uid])) {
+    $RCMAIL->config->set('prefer_html', $_SESSION['msg_formats'][$mbox_name.':'.$msg_uid]);
+  }
+  else {
+    $prefer_html = $CONFIG['prefer_html'] || $CONFIG['htmleditor'] || $compose_mode == RCUBE_COMPOSE_DRAFT || $compose_mode == RCUBE_COMPOSE_EDIT;
+    $RCMAIL->config->set('prefer_html', $prefer_html);
+  }
+
   $MESSAGE = new rcube_message($msg_uid);
 
   // make sure message is marked as read
@@ -509,7 +518,7 @@ function rcmail_compose_header_from($attrib)
 
 function rcmail_compose_editor_mode()
 {
-  global $RCMAIL, $MESSAGE, $compose_mode;
+  global $RCMAIL, $compose_mode;
   static $useHtml;
 
   if ($useHtml !== null)
@@ -521,13 +530,13 @@ function rcmail_compose_editor_mode()
     $useHtml = !empty($_POST['_is_html']);
   }
   else if ($compose_mode == RCUBE_COMPOSE_DRAFT || $compose_mode == RCUBE_COMPOSE_EDIT) {
-    $useHtml = $MESSAGE->has_html_part(false, true);
+    $useHtml = rcmail_message_is_html();
   }
   else if ($compose_mode == RCUBE_COMPOSE_REPLY) {
-    $useHtml = ($html_editor == 1 || ($html_editor >= 2 && $MESSAGE->has_html_part(false, true)));
+    $useHtml = ($html_editor == 1 || ($html_editor >= 2 && rcmail_message_is_html()));
   }
   else if ($compose_mode == RCUBE_COMPOSE_FORWARD) {
-    $useHtml = ($html_editor == 1 || ($html_editor == 3 && $MESSAGE->has_html_part(false, true)));
+    $useHtml = ($html_editor == 1 || ($html_editor == 3 && rcmail_message_is_html()));
   }
   else {
     $useHtml = ($html_editor == 1);
@@ -536,6 +545,11 @@ function rcmail_compose_editor_mode()
   return $useHtml;
 }
 
+function rcmail_message_is_html()
+{
+    global $RCMAIL, $MESSAGE;
+    return $RCMAIL->config->get('prefer_html') && ($MESSAGE instanceof rcube_message) && $MESSAGE->has_html_part(true);
+}
 
 function rcmail_prepare_message_body()
 {
@@ -554,8 +568,7 @@ function rcmail_prepare_message_body()
   else if ($compose_mode == RCUBE_COMPOSE_FORWARD && $COMPOSE['as_attachment']) {
     $isHtml = rcmail_compose_editor_mode();
     $body = '';
-    if (empty($COMPOSE['attachments']))
-      rcmail_write_forward_attachments();
+    rcmail_write_forward_attachments();
   }
   // reply/edit/draft/forward
   else if ($compose_mode && ($compose_mode != RCUBE_COMPOSE_REPLY || $RCMAIL->config->get('reply_mode') != -1)) {
@@ -669,9 +682,6 @@ function rcmail_compose_part_body($part, $isHtml = false)
             $len = $compose_mode == RCUBE_COMPOSE_REPLY ? $LINE_LENGTH-2 : $LINE_LENGTH;
             $txt = new rcube_html2text($body, false, true, $len);
             $body = $txt->get_text();
-        }
-        else if ($part->ctype_secondary == 'enriched') {
-            $body = rcube_enriched::to_html($body);
         }
         else {
             if ($part->ctype_secondary == 'plain' && $part->ctype_parameters['format'] == 'flowed') {
@@ -1063,6 +1073,11 @@ function rcmail_write_forward_attachments()
   $curr_mem  = function_exists('memory_get_usage') ? memory_get_usage() : 16*1024*1024; // safe value: 16MB
   $names     = array();
 
+  $loaded_attachments = array();
+  foreach ((array)$COMPOSE['attachments'] as $id => $attachment) {
+      $loaded_attachments[$attachment['name'] . $attachment['mimetype']] = $attachment;
+  }
+
   if ($COMPOSE['forward_uid'] == '*') {
     $index = $storage->index(null, rcmail_sort_column(), rcmail_sort_order());
     $COMPOSE['forward_uid'] = $index->get();
@@ -1096,6 +1111,10 @@ function rcmail_write_forward_attachments()
     $name .= '.eml';
 
     $data = $path = null;
+
+    if (!empty($loaded_attachments[$name . 'message/rfc822'])) {
+      continue;
+    }
 
     // don't load too big attachments into memory
     if ($mem_limit > 0 && $message->size > $mem_limit - $curr_mem) {

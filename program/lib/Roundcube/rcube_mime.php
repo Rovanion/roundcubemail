@@ -595,11 +595,12 @@ class rcube_mime
             while (count($list)) {
                 $line   = array_shift($list);
                 $l      = mb_strlen($line);
-                $newlen = $len + $l + ($len ? 1 : 0);
+                $space  = $len ? 1 : 0;
+                $newlen = $len + $l + $space;
 
                 if ($newlen <= $width) {
-                    $string .= ($len ? ' ' : '').$line;
-                    $len += (1 + $l);
+                    $string .= ($space ? ' ' : '').$line;
+                    $len += ($space + $l);
                 }
                 else {
                     if ($l > $width) {
@@ -671,7 +672,16 @@ class rcube_mime
 
         // try fileinfo extension if available
         if (!$mime_type && function_exists('finfo_open')) {
-            if ($finfo = finfo_open(FILEINFO_MIME, $mime_magic)) {
+            // null as a 2nd argument should be the same as no argument
+            // this however is not true on all systems/versions
+            if ($mime_magic) {
+                $finfo = finfo_open(FILEINFO_MIME, $mime_magic);
+            }
+            else {
+                $finfo = finfo_open(FILEINFO_MIME);
+            }
+
+            if ($finfo) {
                 if ($is_stream)
                     $mime_type = finfo_buffer($finfo, $path);
                 else
@@ -717,21 +727,27 @@ class rcube_mime
         // load mapping file
         $file_paths = array();
 
-        if ($mime_types = rcube::get_instance()->config->get('mime_types'))
+        if ($mime_types = rcube::get_instance()->config->get('mime_types')) {
             $file_paths[] = $mime_types;
+        }
 
         // try common locations
-        $file_paths[] = '/etc/mime.types';
-        $file_paths[] = '/etc/httpd/mime.types';
-        $file_paths[] = '/etc/httpd2/mime.types';
-        $file_paths[] = '/etc/apache/mime.types';
-        $file_paths[] = '/etc/apache2/mime.types';
-        $file_paths[] = '/usr/local/etc/httpd/conf/mime.types';
-        $file_paths[] = '/usr/local/etc/apache/conf/mime.types';
+        if (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN') {
+            $file_paths[] = 'C:/xampp/apache/conf/mime.types.';
+        }
+        else {
+            $file_paths[] = '/etc/mime.types';
+            $file_paths[] = '/etc/httpd/mime.types';
+            $file_paths[] = '/etc/httpd2/mime.types';
+            $file_paths[] = '/etc/apache/mime.types';
+            $file_paths[] = '/etc/apache2/mime.types';
+            $file_paths[] = '/usr/local/etc/httpd/conf/mime.types';
+            $file_paths[] = '/usr/local/etc/apache/conf/mime.types';
+        }
 
         foreach ($file_paths as $fp) {
             if (is_readable($fp)) {
-                $lines = file($fp, FILE_IGNORE_NEW_LINES);
+                $lines = file($fp, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                 break;
             }
         }

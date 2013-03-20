@@ -179,7 +179,8 @@ function rcube_webmail()
     }
 
     // enable general commands
-    this.enable_command('close', 'logout', 'mail', 'addressbook', 'settings', 'save-pref', 'compose', 'undo', 'about', 'switch-task', true);
+    this.enable_command('close', 'logout', 'mail', 'addressbook', 'settings', 'save-pref',
+      'compose', 'undo', 'about', 'switch-task', 'menu-open', 'menu-save', true);
 
     if (this.env.permaurl)
       this.enable_command('permaurl', 'extwin', true);
@@ -211,7 +212,7 @@ function rcube_webmail()
           this.gui_objects.messagelist.parentNode.onmousedown = function(e){ return p.click_on_list(e); };
 
           this.message_list.init();
-          this.enable_command('toggle_status', 'toggle_flag', 'menu-open', 'menu-save', 'sort', true);
+          this.enable_command('toggle_status', 'toggle_flag', 'sort', true);
 
           // load messages
           this.command('list');
@@ -227,8 +228,8 @@ function rcube_webmail()
 
         this.env.message_commands = ['show', 'reply', 'reply-all', 'reply-list',
           'moveto', 'copy', 'delete', 'open', 'mark', 'edit', 'viewsource',
-          'print', 'load-attachment', 'show-headers', 'hide-headers', 'download',
-          'forward', 'forward-inline', 'forward-attachment'];
+          'print', 'load-attachment', 'download-attachment', 'show-headers', 'hide-headers', 'download',
+          'forward', 'forward-inline', 'forward-attachment', 'change-format'];
 
         if (this.env.action == 'show' || this.env.action == 'preview') {
           this.enable_command(this.env.message_commands, this.env.uid);
@@ -595,18 +596,35 @@ function rcube_webmail()
 
       case 'extwin':
         if (this.env.action == 'compose') {
-          var prevstate = this.env.compose_extwin;
-          $("input[name='_action']", this.gui_objects.messageform).val('compose');
-          this.gui_objects.messageform.action = this.url('mail/compose', { _id: this.env.compose_id, _extwin: 1 });
-          this.gui_objects.messageform.target = this.open_window('', 1100, 900);
-          this.gui_objects.messageform.submit();
+          var form = this.gui_objects.messageform;
+
+          $("input[name='_action']", form).val('compose');
+          form.action = this.url('mail/compose', { _id: this.env.compose_id, _extwin: 1 });
+          form.target = this.open_window('', 1100, 900);
+          form.submit();
         }
         else {
           this.open_window(this.env.permaurl, 900, 900);
         }
         break;
 
+      case 'change-format':
+        url = this.env.permaurl + '&_format=' + props;
+
+        if (this.env.action == 'preview')
+          url = url.replace(/_action=show/, '_action=preview') + '&_framed=1';
+        if (this.env.extwin)
+          url += '&_extwin=1';
+
+        location.href = url;
+        break;
+
       case 'menu-open':
+        if (props && props.menu == 'attachmentmenu') {
+          var mimetype = this.env.attachments[props.id];
+          this.enable_command('open-attachment', mimetype && this.env.mimetypes && $.inArray(mimetype, this.env.mimetypes) >= 0);
+        }
+
       case 'menu-save':
         this.triggerEvent(command, {props:props});
         return false;
@@ -832,11 +850,14 @@ function rcube_webmail()
         break;
 
       case 'load-attachment':
-        var qstring = '_mbox='+urlencode(this.env.mailbox)+'&_uid='+this.env.uid+'&_part='+props.part;
+      case 'open-attachment':
+      case 'download-attachment':
+        var qstring = '_mbox='+urlencode(this.env.mailbox)+'&_uid='+this.env.uid+'&_part='+props,
+          mimetype = this.env.attachments[props];
 
         // open attachment in frame if it's of a supported mimetype
-        if (this.env.uid && props.mimetype && this.env.mimetypes && $.inArray(props.mimetype, this.env.mimetypes) >= 0) {
-          var attachment_win = window.open(this.env.comm_path+'&_action=get&'+qstring+'&_frame=1', 'rcubemailattachment'+this.env.uid+props.part);
+        if (command != 'download-attachment' && mimetype && this.env.mimetypes && $.inArray(mimetype, this.env.mimetypes) >= 0) {
+          var attachment_win = window.open(this.env.comm_path+'&_action=get&'+qstring+'&_frame=1', this.html_identifier('rcubemailattachment'+this.env.uid+props));
           if (attachment_win) {
             setTimeout(function(){ attachment_win.focus(); }, 10);
             break;
@@ -879,7 +900,7 @@ function rcube_webmail()
 
       case 'nextmessage':
         if (this.env.next_uid)
-          this.show_message(this.env.next_uid, false, this.env.action=='preview');
+          this.show_message(this.env.next_uid, false, this.env.action == 'preview');
         break;
 
       case 'lastmessage':
@@ -1225,7 +1246,7 @@ function rcube_webmail()
     if (!url)
       url = this.env.comm_path;
 
-    return url.replace(/_task=[a-z]+/, '_task='+task);
+    return url.replace(/_task=[a-z0-9_-]+/i, '_task='+task);
   };
 
   this.reload = function(delay)
@@ -2974,10 +2995,10 @@ function rcube_webmail()
       input_message = $("[name='_message']").get(0),
       html_mode = $("input[name='_is_html']").val() == '1',
       ac_fields = ['cc', 'bcc', 'replyto', 'followupto'],
-      ac_props;
+      ac_props, opener_rc = this.opener();
 
     // close compose step in opener
-    if (window.opener && !window.opener.closed && opener.rcmail && opener.rcmail.env.action == 'compose') {
+    if (opener_rc && opener_rc.env.action == 'compose') {
       setTimeout(function(){ opener.history.back(); }, 100);
       this.env.opened_extwin = true;
     }
@@ -3656,9 +3677,10 @@ function rcube_webmail()
     this.display_message(msg, type);
 
     if (this.env.extwin) {
+      var opener_rc = this.opener();
       this.lock_form(this.gui_objects.messageform);
-      if (window.opener && !window.opener.closed && opener.rcmail)
-        opener.rcmail.display_message(msg, type);
+      if (opener_rc)
+        opener_rc.display_message(msg, type);
       setTimeout(function(){ window.close() }, 1000);
     }
     else {
@@ -5959,9 +5981,9 @@ function rcube_webmail()
     var base = this.env.comm_path, k, param = {};
 
     // overwrite task name
-    if (query._action.match(/([a-z]+)\/([a-z0-9-_.]+)/)) {
+    if (query._action.match(/([a-z0-9_-]+)\/([a-z0-9-_.]+)/)) {
       query._action = RegExp.$2;
-      base = base.replace(/\_task=[a-z]+/, '_task='+RegExp.$1);
+      base = base.replace(/\_task=[a-z0-9_-]+/, '_task='+RegExp.$1);
     }
 
     // remove undefined values
@@ -6238,6 +6260,14 @@ function rcube_webmail()
     if (location_url && this.env.action != 'compose')  // don't redirect on compose screen, contents might get lost (#1488926)
       this.redirect(location_url);
 
+    // 403 Forbidden response (CSRF prevention) - reload the page.
+    // In case there's a new valid session it will be used, otherwise
+    // login form will be presented (#1488960).
+    if (request.status == 403) {
+      (this.is_framed() ? parent : window).location.reload();
+      return;
+    }
+
     // re-send keep-alive requests after 30 seconds
     if (action == 'keep-alive')
       setTimeout(function(){ ref.keep_alive(); ref.start_keepalive(); }, 30000);
@@ -6489,6 +6519,17 @@ function rcube_webmail()
   /********************************************************/
   /*********            helper methods            *********/
   /********************************************************/
+
+  // get window.opener.rcmail if available
+  this.opener = function()
+  {
+    // catch Error: Permission denied to access property rcmail
+    try {
+      if (window.opener && !opener.closed && opener.rcmail)
+        return opener.rcmail;
+    }
+    catch (e) {}
+  };
 
   // check if we're in show mode or if we have a unique selection
   // and return the message uid

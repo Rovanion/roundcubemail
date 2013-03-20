@@ -1,7 +1,30 @@
 CHANGELOG Roundcube Webmail
 ===========================
 
-- Fix plain text spellchecker icorrect highlighting in non-ASCII text (#1488973)
+- Add rel="noreferrer" for links in displayed messages (#1484686)
+- Fix so forward as attachment works if additional attachment is added by message_compose hook (#1489000)
+- Add ability to toggle between HTML and text while viewing a message (#1486939)
+- Better handling of session errors in ajax requests (#1488960)
+- Fix HTML part detection for some specific message structures (#1488992)
+- Don't show fake address - phishing prevention (#1488981)
+- Fix forward as attachment bug with editormode != 1 (#1488991)
+- Fix LIMIT/OFFSET queries handling on MS SQL Server (#1488984)
+- Fix so task name can really contain all from a-z0-9_- characters (#1488941)
+- Support IMAP MOVE extension [RFC 6851]
+- Fix javascript errors when working in a page opened with taget="_blank"
+- Mention SQLite database format change in UPGRADING file (#1488983)
+- Increase maxlength to 254 chars for email input fields in addressbook (#1488987)
+- Add attachment menu with Open and Download options (#1488975)
+- Fix thumbnail size when GD extension is used for image resize (#1488985)
+- Display user-friendly message on IMAP "over quota" errors (#1484164)
+- Display notice that message is encrypted also for application/pkcs7-mime messages (#1488526)
+- Extended archive plugin with user-configurable options to store messages into subfolders
+- Fix export of selected contacts from search result (#1488905)
+- Feature to export only selected contacts from addressbook (by Phil Weir)
+
+RELEASE 0.9-rc
+--------------
+- Fix plain text spellchecker incorrect highlighting in non-ASCII text (#1488973)
 - Add workaround for invalid message charset detection by IMAP servers (#1488968)
 - Fix NUL characters in content-type of ms-tnef attachment (#1488964)
 - Fix regression in handling LDAP contact identifiers (#1488959)
@@ -13,11 +36,8 @@ CHANGELOG Roundcube Webmail
 - Use LDAP fallback hosts on connect + bind instead of ldap_connect() only.
 - Add config option for LDAP bind timeout (sets LDAP_OPT_NETWORK_TIMEOUT option)
 - Submit Addressbook advanced search form with Enter key (#1488568)
-- Extended archive plugin with user-configurable options to store messages into subfolders
 - Also block remote images in HTML part view (#1488827)
 - Improved database schema upgrade procedure, added updatedb.sh script
-- Fix export of selected contacts from search result (#1488905)
-- Feature to export only selected contacts from addressbook (by Phil Weir)
 - Force autocommit mode in mysql database driver (#1488902)
 
 RELEASE 0.9-beta
