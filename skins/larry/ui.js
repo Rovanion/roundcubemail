@@ -61,6 +61,18 @@ function rcube_mail_ui()
   }
 
   /**
+   * Shows or hides the left part of the mail views.
+   */
+  function show_hide_menu(jQueryIdentifier){
+    if($(jQueryIdentifier).css('display') == 'none'){
+      $(jQueryIdentifier).css({'display': 'block', 'width': '99%', 'max-width': '300px'});
+    }
+    else{
+      $(jQueryIdentifier).css({'display': '', 'width': '', 'max-width': ''});
+    }
+  }
+
+  /**
    * Initialize UI
    * Called on document.ready
    */
@@ -80,6 +92,13 @@ function rcube_mail_ui()
     });
 
     /***  mail task  ***/
+    $('#mailview-left-button').click(function(){
+      show_hide_menu('#mailview-left');
+    });
+    $('#folderlist-content').click(function(){
+      show_hide_menu('#mailview-left');
+    });
+
     if (rcmail.env.task == 'mail') {
       rcmail.addEventListener('menu-open', show_listoptions);
       rcmail.addEventListener('menu-save', save_listoptions);
@@ -185,13 +204,16 @@ function rcube_mail_ui()
         new rcube_scroller('#directorylist-content', '#directorylist-header', '#directorylist-footer');
       }
     }
-
-    // set min-width to show all toolbar buttons
-    var screen = $('.minwidth');
-    if (screen.length) {
-      screen.css('min-width', $('.toolbar').width() + $('#quicksearchbar').parent().width() + 20);
-    }
-
+      /**
+       * Commented out this part of the code. The css now makes the UI flexible instead.
+       * This should probably be removed at some point.
+       **
+       // set min-width to show all toolbar buttons
+       var screen = $('.minwidth');
+       if (screen.length) {
+       screen.css('min-width', $('.toolbar').width() + $('#quicksearchbar').parent().width() + 20);
+       }
+      */
     // turn a group of fieldsets into tabs
     $('.tabbed').each(function(idx, elem){ init_tabs(elem); })
 

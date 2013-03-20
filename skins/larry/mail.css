@@ -1,4 +1,4 @@
-/**
+
  * Roundcube webmail styles for the Email section
  *
  * Copyright (c) 2012, The Roundcube Dev Team
@@ -16,7 +16,23 @@
 	left: 0;
 	width: 220px;
 	bottom: 0;
-	z-index: 2;
+}
+#mailview-left-button{
+    display: none;
+}
+
+@media (max-width: 800px){
+    #mailview-left-button{
+	display: inline;
+	cursor: pointer;
+    }
+    #mailview-left{
+	display: none;
+    }
+    #mailview-right{
+	left: 0 !important;
+	width: 100%;
+    }
 }
 
 #mailview-right {
@@ -39,6 +55,12 @@
 	width: 100%;
 	bottom: 28px;
 }
+@media (max-width: 987px){
+    #mailview-top {
+	top: 84px;
+    }
+}
+
 
 #mailview-top.fullheight {
 	border-radius: 4px 4px 0 0;
@@ -47,7 +69,7 @@
 #mailview-bottom {
 	position: absolute;
 	left: 0;
-	bottom: 0;
+	bottom: -3px;
 	width: 100%;
 	height: 27px;
 	border-radius: 4px;
@@ -58,6 +80,10 @@
 	width: 100%;
 	height: 12px;
 	top: 32px;
+}
+
+#mailboxcontainer{
+    z-index: 5;
 }
 
 #mailboxcontainer,
@@ -345,10 +371,8 @@ a.iconbutton.threadmode.selected {
 }
 
 #searchfilter {
-	position: absolute;
-	right: 256px;
-	width: auto;
 	top: 2px;
+	display: inline-block;
 }
 
 #searchfilter select {
@@ -384,7 +408,11 @@ a.iconbutton.threadmode.selected {
 	position: absolute;
 	right: 0;
 	top: 0;
-	width: 400px;
+}
+@media (max-width: 987px){
+    #messagesearchtools {
+	top: 42px;
+    }
 }
 
 #mailpreviewtoggle {
@@ -416,7 +444,8 @@ a.iconbutton.threadmode.selected {
 	width: 20px;
 	padding: 2px 3px;
 }
-
+/*
+ *This seems to cause more problems nowadays. Atleast in chromium 25.
 .webkit #messagelist tr td.attachment,
 .webkit #messagelist tr td.threads,
 .webkit #messagelist tr td.status,
@@ -424,13 +453,13 @@ a.iconbutton.threadmode.selected {
 .webkit #messagelist tr td.priority {
 	width: 26px;
 }
-
+*/
 #messagelist tr td.threads {
 	width: 26px;
 }
 
 .webkit #messagelist tr td.threads {
-	width: 30px;
+	width: 26px;
 }
 
 #messagelist tr td.threads,
@@ -452,7 +481,7 @@ a.iconbutton.threadmode.selected {
 #messagelist tr td.to,
 #messagelist tr td.cc,
 #messagelist tr td.replyto {
-	width: 200px;
+	width: 20%;
 }
 
 #messagelist tr td.date {
@@ -655,7 +684,7 @@ a.iconbutton.threadmode.selected {
 
 #messagelist thead tr td.subject,
 #messagelist tbody tr td.subject {
-	width: 99%;
+	width: 50%;
 	white-space: nowrap;
 }
 

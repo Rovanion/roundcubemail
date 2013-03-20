@@ -806,9 +806,9 @@ a.iconlink.upload {
 #mainscreen {
 	position: absolute;
 	top: 88px;
-	left: 10px;
-	right: 10px;
-	bottom: 20px;
+	left: 1%;
+	right: 1%;
+	bottom: 2%;
 }
 
 .minimal #mainscreen {
@@ -852,8 +852,8 @@ a.iconlink.upload {
 	left: 0;
 	bottom: 0;
 	width: 100%;
-	min-width: 1024px;
 }
+
 
 .scroller {
 	overflow: auto;
@@ -1549,19 +1549,16 @@ ul.proplist li {
 /*** quicksearch **/
 
 .searchbox {
-	position: relative;
+    position: relative;
 }
 
 #quicksearchbar {
-	position: absolute;
-	right: 1px;
-	top: 2px;
-	width: 240px;
+    display: inline-block;
 }
 
 .searchbox input,
 #quicksearchbar input {
-	width: 176px;
+    width: 176px;
 	margin: 0;
 	padding: 3px 30px 3px 34px;
 	height: 18px;
