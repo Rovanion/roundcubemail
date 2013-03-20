@@ -10,6 +10,11 @@
  * See http://creativecommons.org/licenses/by-sa/3.0/ for details.
  */
 
+/* I have no fucking idea why, but the first rule in this sheet doesn't work.
+ * So here is an empty rule to be ignored.
+ */
+#aoeu{}
+
 #mailview-left {
 	position: absolute;
 	top: 0;
@@ -17,19 +22,18 @@
 	width: 220px;
 	bottom: 0;
 }
-#mailview-left-button{
+#mailview-left-button {
     display: none;
 }
-
-@media (max-width: 800px){
-    #mailview-left-button{
+@media (max-width: 800px) {
+    #mailview-left-button {
 	display: inline;
 	cursor: pointer;
     }
-    #mailview-left{
+    #mailview-left {
 	display: none;
     }
-    #mailview-right{
+    #mailview-right {
 	left: 0 !important;
 	width: 100%;
     }
@@ -40,7 +44,7 @@
 	top: 0;
 	left: 232px;
 	right: 0;
-	bottom: 0;
+	bottom: -2px;
 	z-index: 3;
 }
 
