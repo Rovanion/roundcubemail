@@ -64,12 +64,12 @@ function rcube_mail_ui()
   /**
    * Shows or hides the left part of the mail views.
    */
-  function show_hide_menu(jQueryIdentifier){
-    if($(jQueryIdentifier).css('display') == 'none'){
-      $(jQueryIdentifier).css({'display': 'block', 'width': '99%', 'max-width': '300px'});
+  function show_hide_menu(jqObject){
+    if(jqObject.css('display') == 'none'){
+      jqObject.css({'display': 'block', 'width': '99%', 'max-width': jqObject.css('width')});
     }
     else{
-      $(jQueryIdentifier).css({'display': '', 'width': '', 'max-width': ''});
+      jqObject.css({'display': '', 'width': jqObject.css('max-width') , 'max-width': ''});
     }
   }
 
@@ -93,11 +93,13 @@ function rcube_mail_ui()
     });
 
     /***  mail task  ***/
+    var mailview_left = $('#mailview-left');
     $('#mailview-left-button').click(function(){
-      show_hide_menu('#mailview-left');
+
+      show_hide_menu(mailview_left);
     });
     $('#folderlist-content').click(function(){
-      show_hide_menu('#mailview-left');
+      show_hide_menu(mailview_left);
     });
 
     if (rcmail.env.task == 'mail') {

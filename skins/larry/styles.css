@@ -1169,7 +1169,7 @@ ul.treelist li.selected > div.expanded {
 
 table.records-table {
 	display: table;
-	width: 100%;
+	width: 100.05%;
 	table-layout: fixed;
 	border-collapse: collapse;
 	border-spacing: 0;
@@ -1553,7 +1553,7 @@ ul.proplist li {
 
 .searchbox input,
 #quicksearchbar input {
-    width: 176px;
+    width: 150px;
 	margin: 0;
 	padding: 3px 30px 3px 34px;
 	height: 18px;
