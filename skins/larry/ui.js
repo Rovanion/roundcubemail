@@ -31,6 +31,9 @@ function rcube_mail_ui()
   var me = this;
   var mailviewsplit;
   var compose_headers = {};
+  // Vars that have to do with the showing or hiding of toolbar icons.
+  var icon_width = (parseInt($('.button').css('max-width'), 10) + parseInt($('.button').css('min-width'), 10)) / 2;
+  var nr_of_visible_icons = Math.floor($(window).width() / icon_width) - 1;
 
   // export public methods
   this.set = setenv;
@@ -95,7 +98,6 @@ function rcube_mail_ui()
     /***  mail task  ***/
     var mailview_left = $('#mailview-left');
     $('#mailview-left-button').click(function(){
-
       show_hide_menu(mailview_left);
     });
     $('#folderlist-content').click(function(){
@@ -308,11 +310,18 @@ function rcube_mail_ui()
     }
   }
 
+  var last_size = $(window).width();
   /**
    * Update UI on window resize
    */
-  function resize()
-  {
+  function resize(){
+    // Don't run the function if it's already been run for this size.
+    // Chrome bug causes it to be fired twice per resize: http://code.google.com/p/chromium/issues/detail?id=133869.
+    if(last_size == $(window).width()) {
+      return;
+    }
+    last_size = $(window).width();
+
     if (rcmail.env.task == 'mail') {
       if (rcmail.env.action == 'show' || rcmail.env.action == 'preview')
         layout_messageview();
@@ -333,6 +342,24 @@ function rcube_mail_ui()
         body[action]('floatingbuttons');
       }
     });
+
+    // Hide and show menu items depending on the width of the window
+    var diff = nr_of_visible_icons - Math.floor(last_size / icon_width) + 1;
+    if(diff != 0){
+      var toolbar = $('.toolbar');
+      // If the diff is positive that means the window is getting smaller.
+      if (diff > 0){
+	console.debug('Removing buttons ' + (nr_of_visible_icons - diff) + '-' + nr_of_visible_icons);
+	console.debug(toolbar.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).hide());
+      }
+      else{
+	console.debug('Adding buttons ' + nr_of_visible_icons + '-' + (nr_of_visible_icons - diff));
+	console.debug(toolbar.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
+      }
+
+      toolbar.find('.more').show();
+      nr_of_visible_icons = Math.floor(last_size / icon_width) - 1;
+    }
   }
 
   /**
