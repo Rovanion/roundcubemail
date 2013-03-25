@@ -1,0 +1,41 @@
+<div id="forwardmenu" class="popupmenu">
+	<ul class="toolbarmenu">
+		<li><roundcube:button command="forward-inline" label="forwardinline" prop="sub" classAct="forwardlink active" class="forwardlink" /></li>
+		<li><roundcube:button command="forward-attachment" label="forwardattachment" prop="sub" classAct="forwardattachmentlink active" class="forwardattachmentlink" /></li>
+		<roundcube:container name="forwardmenu" id="forwardmenu" />
+	</ul>
+</div>
+
+<div id="replyallmenu" class="popupmenu">
+	<ul class="toolbarmenu">
+		<li><roundcube:button command="reply-all" label="replyall" prop="sub" class="replyalllink" classAct="replyalllink active" /></li>
+		<li><roundcube:button command="reply-list" label="replylist" prop="sub" class="replylistlink" classAct="replylistlink active" /></li>
+		<roundcube:container name="replyallmenu" id="replyallmenu" />
+	</ul>
+</div>
+
+<div id="markmessagemenu" class="popupmenu">
+  <ul class="toolbarmenu iconized">
+	<li><roundcube:button command="mark" prop="read" label="markread" classAct="icon active" class="icon" innerclass="icon read" /></li>
+	<li><roundcube:button command="mark" prop="unread" label="markunread" classAct="icon active" class="icon" innerclass="icon unread" /></li>
+	<li><roundcube:button command="mark" prop="flagged" label="markflagged" classAct="icon active" class="icon" innerclass="icon flagged" /></li>
+	<li><roundcube:button command="mark" prop="unflagged" label="markunflagged" classAct="icon active" class="icon" innerclass="icon unflagged" /></li>
+	<roundcube:container name="markmenu" id="markmessagemenu" />
+  </ul>
+</div>
+
+<div id="messagemenu" class="popupmenu">
+  <ul class="toolbarmenu iconized">
+	<li><roundcube:button command="compose" label="compose" class="icon" classAct="icon active" innerclass="icon compose" /></li>
+	<li><roundcube:button command="reply" label="reply" class="icon" classAct="icon active" innerclass="icon reply" /></li>
+	<li><roundcube:button command="reply-all" label="replyall" class="icon" classAct="icon active" innerclass="icon replyall" /></li>
+	<li><roundcube:button command="delete" label="delete" class="icon" classAct="icon active" innerclass="icon delete" /></li>
+	<li><roundcube:button class="icon" classAct="icon active" innerclass="icon delete" /></li>
+	<li><roundcube:button command="print" label="printmessage" class="icon" classAct="icon active" innerclass="icon print" /></li>
+	<li><roundcube:button command="download" label="emlsave" class="icon" classAct="icon active" innerclass="icon download" /></li>
+	<li><roundcube:button command="edit" prop="new" label="editasnew" class="icon" classAct="icon active" innerclass="icon edit" /></li>
+	<li><roundcube:button command="viewsource" label="viewsource" class="icon" classAct="icon active" innerclass="icon viewsource" /></li>
+	<li><roundcube:button command="open" label="openinextwin" target="_blank" class="icon" classAct="icon active" innerclass="icon extwin" /></li>
+	<roundcube:container name="messagemenu" id="messagemenu" />
+  </ul>
+</div>
