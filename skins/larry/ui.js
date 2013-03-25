@@ -31,9 +31,12 @@ function rcube_mail_ui()
   var me = this;
   var mailviewsplit;
   var compose_headers = {};
-  // Vars that have to do with the showing or hiding of toolbar icons.
+  // Variables concerning the icons in message toolbar.
+  var toolbar = $('.toolbar');
+  var toolbar_menu = $('.toolbarmenu');
+  var last_width = $('#messagetoolbar').width();
   var icon_width = (parseInt($('.button').css('max-width'), 10) + parseInt($('.button').css('min-width'), 10)) / 2;
-  var nr_of_visible_icons = Math.floor($(window).width() / icon_width) - 1;
+  var nr_of_visible_icons = Math.floor(last_width / icon_width);
 
   // export public methods
   this.set = setenv;
@@ -283,7 +286,9 @@ function rcube_mail_ui()
 
     // don't use $(window).resize() due to some unwanted side-effects
     window.onresize = resize;
+    console.debug(last_width);
     resize();
+    console.debug(last_width);
   }
 
   /**
@@ -310,17 +315,21 @@ function rcube_mail_ui()
     }
   }
 
-  var last_size = $(window).width();
   /**
    * Update UI on window resize
    */
   function resize(){
     // Don't run the function if it's already been run for this size.
-    // Chrome bug causes it to be fired twice per resize: http://code.google.com/p/chromium/issues/detail?id=133869.
-    if(last_size == $(window).width()) {
+    // Chrome bug causes it to be fired twice per resize: 
+    // http://code.google.com/p/chromium/issues/detail?id=133869.
+    if(last_width == $(window).width()) {
       return;
     }
-    last_size = $(window).width();
+    last_width = $(window).width();
+    // Hide the text of all main icons if they get stuck in the roundcube logo.
+    if(last_width < 600){
+      $(document.body).addClass('minimal');
+    }
 
     if (rcmail.env.task == 'mail') {
       if (rcmail.env.action == 'show' || rcmail.env.action == 'preview')
@@ -344,21 +353,21 @@ function rcube_mail_ui()
     });
 
     // Hide and show menu items depending on the width of the window
-    var diff = nr_of_visible_icons - Math.floor(last_size / icon_width) + 1;
+    var diff = nr_of_visible_icons - Math.floor(last_width / icon_width) + 1;
     if(diff != 0){
-      var toolbar = $('.toolbar');
+
       // If the diff is positive that means the window is getting smaller.
       if (diff > 0){
-	console.debug('Removing buttons ' + (nr_of_visible_icons - diff) + '-' + nr_of_visible_icons);
-	console.debug(toolbar.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).hide());
+	toolbar.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).hide();
+	console.debug(toolbar_menu.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).show());
       }
       else{
-	console.debug('Adding buttons ' + nr_of_visible_icons + '-' + (nr_of_visible_icons - diff));
-	console.debug(toolbar.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
+	toolbar.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show();
+	console.debug(toolbar_menu.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).hide());
       }
 
       toolbar.find('.more').show();
-      nr_of_visible_icons = Math.floor(last_size / icon_width) - 1;
+      nr_of_visible_icons = Math.floor(last_width / icon_width) - 1;
     }
   }
 
@@ -598,6 +607,7 @@ function rcube_mail_ui()
       rcmail.message_list.scrollto(uid);
 
     rcmail.command('save-pref', { name:'preview_pane', value:(visible?1:0) });
+    resize();
   }
 
 

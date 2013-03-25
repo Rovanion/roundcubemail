@@ -380,11 +380,22 @@ input.button:active {
 	background-position: -29px -1874px;
 }
 
-.pagenav .countdisplay {
+.pagenav {
+	width: 50%;
+	text-align: center;
+}
+.countdisplay {
 	display: inline-block;
-	padding: 3px 1em 0 1em;
+	padding: 3px 0 0 0;
 	text-shadow: 0px 1px 1px #fff;
-	min-width: 16em;
+}
+@media (max-width: 500px){
+    .countdisplay{
+	display: none;
+    }
+    .pagenav{
+	width: 125px;
+    }
 }
 
 .pagenavbuttons {

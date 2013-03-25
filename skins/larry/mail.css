@@ -139,12 +139,15 @@
 #messagelistfooter #listcontrols,
 #messagelistfooter #listselectors {
 	display: inline-block;
-	margin-right: 5%;
 	vertical-align: middle;
 }
 
 #messagelistfooter #listselectors .menuselector {
 	margin-top: -2px;
+}
+
+#listselectors{
+    margin-left: 3%;
 }
 
 a.iconbutton.listmode {
