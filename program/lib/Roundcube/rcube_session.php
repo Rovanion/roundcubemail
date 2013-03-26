@@ -203,10 +203,15 @@ class rcube_session
             if (is_array($a_oldvars)) {
                 // remove unset keys on oldvars
                 foreach ((array)$this->unsets as $var) {
-                    $path = explode('.', $var);
-                    $k = array_pop($path);
-                    $node = &$this->get_node($path, $a_oldvars);
-                    unset($node[$k]);
+                    if (isset($a_oldvars[$var])) {
+                        unset($a_oldvars[$var]);
+                    }
+                    else {
+                        $path = explode('.', $var);
+                        $k = array_pop($path);
+                        $node = &$this->get_node($path, $a_oldvars);
+                        unset($node[$k]);
+                    }
                 }
 
                 $newvars = $this->serialize(array_merge(
@@ -402,7 +407,7 @@ class rcube_session
     /**
      * Unset a session variable
      *
-     * @param string Varibale name (can be a path denoting a certain node in the session array, e.g. compose.attachments.5)
+     * @param string Variable name (can be a path denoting a certain node in the session array, e.g. compose.attachments.5)
      * @return boolean True on success
      */
     public function remove($var=null)
@@ -413,10 +418,15 @@ class rcube_session
 
         $this->unsets[] = $var;
 
-        $path = explode('.', $var);
-        $key = array_pop($path);
-        $node = &$this->get_node($path, $_SESSION);
-        unset($node[$key]);
+        if (isset($_SESSION[$var])) {
+            unset($_SESSION[$var]);
+        }
+        else {
+            $path = explode('.', $var);
+            $key = array_pop($path);
+            $node = &$this->get_node($path, $_SESSION);
+            unset($node[$key]);
+        }
 
         return true;
     }

@@ -318,56 +318,57 @@ function rcube_mail_ui()
   /**
    * Update UI on window resize
    */
-  function resize(){
-    // Don't run the function if it's already been run for this size.
-    // Chrome bug causes it to be fired twice per resize: 
-    // http://code.google.com/p/chromium/issues/detail?id=133869.
-    if(last_width == $(window).width()) {
-      return;
-    }
+  function resize(e) {
+    // resize in intervals to prevent lags and double onresize calls in Chrome (#1489005)
+    var interval = e ? 10 : 0;
+
     last_width = $(window).width();
     // Hide the text of all main icons if they get stuck in the roundcube logo.
     if(last_width < 600){
       $(document.body).addClass('minimal');
     }
+    if (rcmail.resize_timeout)
+      window.clearTimeout(rcmail.resize_timeout);
 
-    if (rcmail.env.task == 'mail') {
-      if (rcmail.env.action == 'show' || rcmail.env.action == 'preview')
-        layout_messageview();
-      else if (rcmail.env.action == 'compose')
-        layout_composeview();
-    }
+    rcmail.resize_timeout = window.setTimeout(function() {
+	if (rcmail.env.task == 'mail') {
+	    if (rcmail.env.action == 'show' || rcmail.env.action == 'preview')
+		layout_messageview();
+	    else if (rcmail.env.action == 'compose')
+		layout_composeview();
+	}
 
-    // make iframe footer buttons float if scrolling is active
-    $('body.iframe .footerleft').each(function(){
-      var footer = $(this),
-        body = $(document.body),
-        floating = footer.hasClass('floating'),
-        overflow = body.outerHeight(true) > $(window).height();
+		// make iframe footer buttons float if scrolling is active
+	$('body.iframe .footerleft').each(function(){
+	    var footer = $(this),
+            body = $(document.body),
+            floating = footer.hasClass('floating'),
+            overflow = body.outerHeight(true) > $(window).height();
 
-      if (overflow != floating) {
-        var action = overflow ? 'addClass' : 'removeClass';
-        footer[action]('floating');
-        body[action]('floatingbuttons');
-      }
-    });
+	    if (overflow != floating) {
+		var action = overflow ? 'addClass' : 'removeClass';
+		footer[action]('floating');
+		body[action]('floatingbuttons');
+	    }
+	});
 
-    // Hide and show menu items depending on the width of the window
-    var diff = nr_of_visible_icons - Math.floor(last_width / icon_width) + 1;
-    if(diff != 0){
-      // If the diff is positive that means the window is getting smaller.
-      if (diff > 0){
-	console.debug(toolbar.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).hide());
-	console.debug(toolbar_menu.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
-      }
-      else{
-	console.debug(toolbar.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
-	console.debug(toolbar_menu.children().slice(nr_of_visible_icons + diff, nr_of_visible_icons).hide());
-      }
+	// Hide and show menu items depending on the width of the window
+	var diff = nr_of_visible_icons - Math.floor(last_width / icon_width) + 1;
+	if(diff != 0){
+	    // If the diff is positive that means the window is getting smaller.
+	    if (diff > 0){
+		console.debug(toolbar.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).hide());
+		console.debug(toolbar_menu.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
+	    }
+	    else{
+		console.debug(toolbar.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
+		console.debug(toolbar_menu.children().slice(nr_of_visible_icons + diff, nr_of_visible_icons).hide());
+	    }
 
-      toolbar.find('.more').show();
-      nr_of_visible_icons = Math.floor(last_width / icon_width) - 1;
-    }
+	    toolbar.find('.more').show();
+	    nr_of_visible_icons = Math.floor(last_width / icon_width) - 1;
+	}
+    }, interval);
   }
 
   /**

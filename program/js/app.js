@@ -178,6 +178,11 @@ function rcube_webmail()
       parent.rcmail.env.frame_lock = null;
     }
 
+    // Makes that reference to document.activeElement do not throw
+    // "unspecified error" in IE9 (#1489008)
+    if (this.env.framed && bw.ie)
+      document.documentElement.focus();
+
     // enable general commands
     this.enable_command('close', 'logout', 'mail', 'addressbook', 'settings', 'save-pref',
       'compose', 'undo', 'about', 'switch-task', 'menu-open', 'menu-save', true);
@@ -314,7 +319,7 @@ function rcube_webmail()
         }
 
         // detect browser capabilities
-        if (!this.is_framed())
+        if (!this.is_framed() && !this.env.extwin)
           this.browser_capabilities_check();
 
         break;
@@ -980,8 +985,8 @@ function rcube_webmail()
         // Reset the auto-save timer
         clearTimeout(this.save_timer);
 
-        // compose form did not change
-        if (this.cmp_hash == this.compose_field_hash()) {
+        // compose form did not change (and draft wasn't saved already)
+        if (this.env.draft_id && this.cmp_hash == this.compose_field_hash()) {
           this.auto_save_start();
           break;
         }
@@ -1637,7 +1642,7 @@ function rcube_webmail()
       l = (screen.width - w) / 2 + (screen.left || 0),
       t = Math.max(0, (screen.height - h) / 2 + (screen.top || 0) - 20),
       wname = 'rcmextwin' + new Date().getTime(),
-      extwin = window.open(url + '&_extwin=1', wname,
+      extwin = window.open(url + (url.match(/\?/) ? '&' : '?') + '_extwin=1', wname,
         'width='+w+',height='+h+',top='+t+',left='+l+',resizable=yes,toolbar=no,status=no,location=no');
 
     // write loading... message to empty windows
@@ -3297,6 +3302,15 @@ function rcube_webmail()
 
   this.set_draft_id = function(id)
   {
+    var rc;
+
+    if (!this.env.draft_id && id && (rc = this.opener())) {
+      // refresh the drafts folder in opener window
+      if (rc.env.task == 'mail' && rc.env.action == '' && rc.env.mailbox == this.env.drafts_mailbox)
+        rc.command('checkmail');
+    }
+
+    this.env.draft_id = id;
     $("input[name='_draft_saveid']").val(id);
   };
 
@@ -3362,7 +3376,7 @@ function rcube_webmail()
         sig = this.env.signatures[sig].text;
         sig = sig.replace(/\r\n/g, '\n');
 
-        p = this.env.sig_above ? message.indexOf(sig) : message.lastIndexOf(sig);
+        p = this.env.top_posting ? message.indexOf(sig) : message.lastIndexOf(sig);
         if (p >= 0)
           message = message.substring(0, p) + message.substring(p+sig.length, message.length);
       }
@@ -3371,7 +3385,7 @@ function rcube_webmail()
         sig = this.env.signatures[id].text;
         sig = sig.replace(/\r\n/g, '\n');
 
-        if (this.env.sig_above) {
+        if (this.env.top_posting) {
           if (p >= 0) { // in place of removed signature
             message = message.substring(0, p) + sig + message.substring(p, message.length);
             cursor_pos = p - 1;
@@ -3415,7 +3429,7 @@ function rcube_webmail()
         sigElem = doc.createElement('div');
         sigElem.setAttribute('id', '_rc_sig');
 
-        if (this.env.sig_above) {
+        if (this.env.top_posting) {
           // if no existing sig and top posting then insert at caret pos
           editor.getWin().focus(); // correct focus in IE & Chrome
 
@@ -3672,15 +3686,19 @@ function rcube_webmail()
     this.env.search_id = null;
   };
 
-  this.sent_successfully = function(type, msg)
+  this.sent_successfully = function(type, msg, target)
   {
     this.display_message(msg, type);
 
     if (this.env.extwin) {
-      var opener_rc = this.opener();
+      var rc = this.opener();
       this.lock_form(this.gui_objects.messageform);
-      if (opener_rc)
-        opener_rc.display_message(msg, type);
+      if (rc) {
+        rc.display_message(msg, type);
+        // refresh the folder where sent message was saved
+        if (target && rc.env.task == 'mail' && rc.env.action == '' && rc.env.mailbox == target)
+          rc.command('checkmail');
+      }
       setTimeout(function(){ window.close() }, 1000);
     }
     else {
