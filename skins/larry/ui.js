@@ -355,15 +355,14 @@ function rcube_mail_ui()
     // Hide and show menu items depending on the width of the window
     var diff = nr_of_visible_icons - Math.floor(last_width / icon_width) + 1;
     if(diff != 0){
-
       // If the diff is positive that means the window is getting smaller.
       if (diff > 0){
-	toolbar.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).hide();
-	console.debug(toolbar_menu.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).show());
+	console.debug(toolbar.children().slice(nr_of_visible_icons - diff, nr_of_visible_icons).hide());
+	console.debug(toolbar_menu.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
       }
       else{
-	toolbar.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show();
-	console.debug(toolbar_menu.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).hide());
+	console.debug(toolbar.children().slice(nr_of_visible_icons, nr_of_visible_icons - diff).show());
+	console.debug(toolbar_menu.children().slice(nr_of_visible_icons + diff, nr_of_visible_icons).hide());
       }
 
       toolbar.find('.more').show();
