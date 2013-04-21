@@ -779,10 +779,16 @@ shift_select: function(id, control)
   if (!this.rows[this.shift_start] || !this.selection.length)
     this.shift_start = id;
 
-  var n, from_rowIndex = this.rows[this.shift_start].obj.rowIndex,
-    to_rowIndex = this.rows[id].obj.rowIndex,
-    i = ((from_rowIndex < to_rowIndex)? from_rowIndex : to_rowIndex),
-    j = ((from_rowIndex > to_rowIndex)? from_rowIndex : to_rowIndex);
+  var n, i, j, to_row = this.rows[id],
+    from_rowIndex = this.rows[this.shift_start].obj.rowIndex,
+    to_rowIndex = to_row.obj.rowIndex;
+
+  if (!to_row.expanded && to_row.has_children)
+    if (to_row = this.rows[(this.row_children(id)).pop()])
+      to_rowIndex = to_row.obj.rowIndex;
+
+  i = ((from_rowIndex < to_rowIndex) ? from_rowIndex : to_rowIndex),
+  j = ((from_rowIndex > to_rowIndex) ? from_rowIndex : to_rowIndex);
 
   // iterate through the entire message list
   for (n in this.rows) {
@@ -828,7 +834,7 @@ select_all: function(filter)
   for (n in this.rows) {
     if (!filter || this.rows[n][filter] == true) {
       this.last_selected = n;
-      this.highlight_row(n, true);
+      this.highlight_row(n, true, true);
     }
     else {
       $(this.rows[n].obj).removeClass('selected').removeClass('unfocused');
@@ -923,7 +929,7 @@ get_single_selection: function()
 /**
  * Highlight/unhighlight a row
  */
-highlight_row: function(id, multiple)
+highlight_row: function(id, multiple, norecur)
 {
   if (!this.rows[id])
     return;
@@ -939,7 +945,7 @@ highlight_row: function(id, multiple)
     if (!this.in_selection(id)) { // select row
       this.selection.push(id);
       $(this.rows[id].obj).addClass('selected');
-      if (!this.rows[id].expanded)
+      if (!norecur && !this.rows[id].expanded)
         this.highlight_children(id, true);
     }
     else { // unselect row
@@ -949,7 +955,7 @@ highlight_row: function(id, multiple)
 
       this.selection = a_pre.concat(a_post);
       $(this.rows[id].obj).removeClass('selected').removeClass('unfocused');
-      if (!this.rows[id].expanded)
+      if (!norecur && !this.rows[id].expanded)
         this.highlight_children(id, false);
     }
   }
@@ -967,7 +973,7 @@ highlight_children: function(id, status)
   for (i=0; i<len; i++) {
     selected = this.in_selection(children[i]);
     if ((status && !selected) || (!status && selected))
-      this.highlight_row(children[i], true);
+      this.highlight_row(children[i], true, true);
   }
 },
 
@@ -1228,7 +1234,7 @@ drag_mouse_up: function(e)
   // remove temp divs
   this.del_dragfix();
 
-  this.triggerEvent('dragend');
+  this.triggerEvent('dragend', e);
 
   return rcube_event.cancel(e);
 },
@@ -1341,7 +1347,7 @@ column_drag_mouse_up: function(e)
     }
   }
 
-  this.triggerEvent('column_dragend');
+  this.triggerEvent('column_dragend', e);
 
   return rcube_event.cancel(e);
 },

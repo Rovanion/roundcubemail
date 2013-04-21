@@ -220,9 +220,9 @@ if (!empty($msg_uid) && empty($COMPOSE['as_attachment']))
     }
   }
   else if ($compose_mode == RCUBE_COMPOSE_DRAFT) {
-    if ($MESSAGE->headers->others['x-draft-info']) {
+    if ($draft_info = $MESSAGE->headers->get('x-draft-info')) {
       // get reply_uid/forward_uid to flag the original message when sending
-      $info = rcmail_draftinfo_decode($MESSAGE->headers->others['x-draft-info']);
+      $info = rcmail_draftinfo_decode($draft_info);
 
       if ($info['type'] == 'reply')
         $COMPOSE['reply_uid'] = $info['uid'];
@@ -239,8 +239,8 @@ if (!empty($msg_uid) && empty($COMPOSE['as_attachment']))
       }
     }
 
-    if ($MESSAGE->headers->in_reply_to)
-      $COMPOSE['reply_msgid'] = '<'.$MESSAGE->headers->in_reply_to.'>';
+    if ($in_reply_to = $MESSAGE->headers->get('in-reply-to'))
+      $COMPOSE['reply_msgid'] = '<' . $in_reply_to . '>';
 
     $COMPOSE['references']  = $MESSAGE->headers->references;
   }
@@ -571,7 +571,7 @@ function rcmail_prepare_message_body()
     rcmail_write_forward_attachments();
   }
   // reply/edit/draft/forward
-  else if ($compose_mode && ($compose_mode != RCUBE_COMPOSE_REPLY || $RCMAIL->config->get('reply_mode') != -1)) {
+  else if ($compose_mode && ($compose_mode != RCUBE_COMPOSE_REPLY || intval($RCMAIL->config->get('reply_mode')) != -1)) {
     $isHtml = rcmail_compose_editor_mode();
 
     if (!empty($MESSAGE->parts)) {
@@ -997,10 +997,12 @@ function rcmail_write_compose_attachments(&$message, $bodyIsHtml)
   foreach ((array)$message->mime_parts as $pid => $part)
   {
     if ($part->disposition == 'attachment' || ($part->disposition == 'inline' && $bodyIsHtml) || $part->filename) {
-      if (($part->ctype_primary == 'message' && $bodyIsHtml) || $part->ctype_primary == 'multipart') {
+      // skip parts that aren't valid attachments
+      if ($part->ctype_primary == 'multipart' || $part->mimetype == 'application/ms-tnef') {
         continue;
       }
-      if ($part->mimetype == 'application/ms-tnef') {
+      // skip message attachments in reply mode
+      if ($part->ctype_primary == 'message' && $compose_mode == RCUBE_COMPOSE_REPLY) {
         continue;
       }
       // skip inline images when forwarding in plain text

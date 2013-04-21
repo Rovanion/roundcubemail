@@ -896,7 +896,7 @@ function rcmail_washtml_callback($tagname, $attrib, $content, $washtml)
  * return table with message headers
  */
 function rcmail_message_headers($attrib, $headers=null)
-  {
+{
   global $OUTPUT, $MESSAGE, $PRINT_MODE, $RCMAIL;
   static $sa_attrib;
 
@@ -1194,7 +1194,7 @@ function rcmail_message_body($attrib)
              html::a($show_link + array('class' => 'image-link', 'style' => sprintf('width:%dpx', $thumbnail_size)),
                html::img(array(
                 'class' => 'image-thumbnail',
-                'src'   => $MESSAGE->get_part_url($attach_prop->mime_id, true) . '&_thumb=1',
+                'src'   => $MESSAGE->get_part_url($attach_prop->mime_id, 'image') . '&_thumb=1',
                 'title' => $attach_prop->filename,
                 'alt'   => $attach_prop->filename,
                 'style' => sprintf('max-width:%dpx; max-height:%dpx', $thumbnail_size, $thumbnail_size),
@@ -1214,7 +1214,7 @@ function rcmail_message_body($attrib)
             html::tag('legend', 'image-filename', Q($attach_prop->filename)) .
             html::p(array('align' => "center"),
               html::img(array(
-                'src'   => $MESSAGE->get_part_url($attach_prop->mime_id, true),
+                'src'   => $MESSAGE->get_part_url($attach_prop->mime_id, 'image'),
                 'title' => $attach_prop->filename,
                 'alt'   => $attach_prop->filename,
               )))
@@ -1897,13 +1897,15 @@ function rcmail_search_filter($attrib)
 
   $attrib['onchange'] = JS_OBJECT_NAME.'.filter_mailbox(this.value)';
 
-  /*
-    RFC3501 (6.4.4): 'ALL', 'RECENT', 
-    'ANSWERED', 'DELETED', 'FLAGGED', 'SEEN',
-    'UNANSWERED', 'UNDELETED', 'UNFLAGGED', 'UNSEEN',
-    'NEW', // = (RECENT UNSEEN)
-    'OLD' // = NOT RECENT
-  */
+  // Content-Type values of messages with attachments
+  // the same as in app.js:add_message_row()
+  $ctypes = array('application/', 'multipart/m', 'multipart/signed', 'multipart/report');
+
+  // Build search string of "with attachment" filter
+  $attachment = str_repeat(' OR', count($ctypes)-1);
+  foreach ($ctypes as $type) {
+    $attachment .= ' HEADER Content-Type ' . rcube_imap_generic::escape($type);
+  }
 
   $select_filter = new html_select($attrib);
   $select_filter->add(rcube_label('all'), 'ALL');
@@ -1914,6 +1916,7 @@ function rcmail_search_filter($attrib)
     $select_filter->add(rcube_label('deleted'), 'DELETED');
     $select_filter->add(rcube_label('undeleted'), 'UNDELETED');
   }
+  $select_filter->add(rcube_label('withattachment'), $attachment);
   $select_filter->add(rcube_label('priority').': '.rcube_label('highest'), 'HEADER X-PRIORITY 1');
   $select_filter->add(rcube_label('priority').': '.rcube_label('high'), 'HEADER X-PRIORITY 2');
   $select_filter->add(rcube_label('priority').': '.rcube_label('normal'), 'NOT HEADER X-PRIORITY 1 NOT HEADER X-PRIORITY 2 NOT HEADER X-PRIORITY 4 NOT HEADER X-PRIORITY 5');

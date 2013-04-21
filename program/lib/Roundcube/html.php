@@ -35,6 +35,7 @@ class html
     public static $common_attrib = array('id','class','style','title','align');
     public static $containers = array('iframe','div','span','p','h1','h2','h3','form','textarea','table','thead','tbody','tr','th','td','style','script');
 
+
     /**
      * Constructor
      *
@@ -217,7 +218,7 @@ class html
             $attr = array('src' => $attr);
         }
         return self::tag('iframe', $attr, $cont, array_merge(self::$common_attrib,
-            array('src','name','width','height','border','frameborder')));
+            array('src','name','width','height','border','frameborder','onload')));
     }
 
     /**
@@ -332,7 +333,16 @@ class html
      */
     public static function quote($str)
     {
-        return @htmlspecialchars($str, ENT_COMPAT, RCUBE_CHARSET);
+        static $flags;
+
+        if (!$flags) {
+            $flags = ENT_COMPAT;
+            if (defined('ENT_SUBSTITUTE')) {
+                $flags |= ENT_SUBSTITUTE;
+            }
+        }
+
+        return @htmlspecialchars($str, $flags, RCUBE_CHARSET);
     }
 }
 

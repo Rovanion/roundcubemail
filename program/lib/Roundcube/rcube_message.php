@@ -85,12 +85,13 @@ class rcube_message
 
         $this->headers = $this->storage->get_message($uid);
 
-        if (!$this->headers)
+        if (!$this->headers) {
             return;
+        }
 
         $this->mime = new rcube_mime($this->headers->charset);
 
-        $this->subject = $this->mime->decode_mime_string($this->headers->subject);
+        $this->subject = $this->headers->get('subject');
         list(, $this->sender) = each($this->mime->decode_address_list($this->headers->from, 1));
 
         $this->set_safe((intval($_GET['_safe']) || $_SESSION['safe_messages'][$this->folder.':'.$uid]));
@@ -125,15 +126,11 @@ class rcube_message
      */
     public function get_header($name, $raw = false)
     {
-        if (empty($this->headers))
+        if (empty($this->headers)) {
             return null;
+        }
 
-        if ($this->headers->$name)
-            $value = $this->headers->$name;
-        else if ($this->headers->others[$name])
-            $value = $this->headers->others[$name];
-
-        return $raw ? $value : $this->mime->decode_header($value);
+        return $this->headers->get($name, !$raw);
     }
 
 
@@ -152,12 +149,13 @@ class rcube_message
      * Compose a valid URL for getting a message part
      *
      * @param string $mime_id Part MIME-ID
+     * @param mixed  $embed Mimetype class for parts to be embedded
      * @return string URL or false if part does not exist
      */
     public function get_part_url($mime_id, $embed = false)
     {
         if ($this->mime_parts[$mime_id])
-            return $this->opt['get_url'] . '&_part=' . $mime_id . ($embed ? '&_embed=1' : '');
+            return $this->opt['get_url'] . '&_part=' . $mime_id . ($embed ? '&_embed=1&_mimeclass=' . $embed : '');
         else
             return false;
     }
@@ -486,14 +484,6 @@ class rcube_message
                 $this->parts[] = $c;
             }
 
-            // add html part as attachment
-            if ($html_part !== null && $structure->parts[$html_part] !== $print_part) {
-                $html_part = $structure->parts[$html_part];
-                $html_part->mimetype = 'text/html';
-
-                $this->attachments[] = $html_part;
-            }
-
             // add unsupported/unrecognized parts to attachments list
             if ($attach_part) {
                 $this->attachments[] = $structure->parts[$attach_part];
@@ -578,10 +568,6 @@ class rcube_message
                     if (!empty($mail_part->filename)) {
                         $this->attachments[] = $mail_part;
                     }
-                    // list html part as attachment (here the part is most likely inside a multipart/related part)
-                    else if ($this->parse_alternative && ($secondary_type == 'html' && !$this->opt['prefer_html'])) {
-                        $this->attachments[] = $mail_part;
-                    }
                 }
                 // part message/*
                 else if ($primary_type == 'message') {
@@ -657,7 +643,7 @@ class rcube_message
                 $img_regexp = '/^image\/(gif|jpe?g|png|tiff|bmp|svg)/';
 
                 foreach ($this->inline_parts as $inline_object) {
-                    $part_url = $this->get_part_url($inline_object->mime_id, true);
+                    $part_url = $this->get_part_url($inline_object->mime_id, $inline_object->ctype_primary);
                     if (isset($inline_object->content_id))
                         $a_replaces['cid:'.$inline_object->content_id] = $part_url;
                     if ($inline_object->content_location) {
